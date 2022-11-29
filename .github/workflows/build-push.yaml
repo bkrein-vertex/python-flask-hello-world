@@ -36,10 +36,9 @@ jobs:
           name: Release ${{ steps.bump_version.outputs.new_tag }}
           generateReleaseNotes: true
 
-      - name: Build & Push
-        run: |
-          make \
-            -e DOCKER_USER=${{ secrets.AF_ACCESS_USER }} \
-            -e DOCKER_PASS=${{ secrets.AF_ACCESS_TOKEN }} \
-            -e GITTAG="-${{ steps.bump_version.outputs.new_tag }}" \
-            all
+      - name: Docker Login
+        uses: docker/login-action@v2
+        with:
+          registry: docker.binrepo.vtxdev.net
+          username: ${{ secrets.AF_ACCESS_USER }}
+          password: ${{ secrets.AF_ACCESS_TOKEN }}
