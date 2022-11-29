@@ -1,0 +1,45 @@
+name: Build/Publish Image
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clone
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Bump version and push tag
+        id: bump_version
+        uses: anothrNick/github-tag-action@1.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+          WITH_V: false
+          VERBOSE: true
+          DRY_RUN: true
+          INITIAL_VERSION: 0.0.1
+          RELEASE_BRANCHES: main
+
+      - name: Create a GitHub release
+        uses: ncipollo/release-action@v1.11.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
+        with:
+          tag: ${{ steps.bump_version.outputs.new_tag }}
+          name: Release ${{ steps.bump_version.outputs.new_tag }}
+          generateReleaseNotes: true
+
+      - name: Build & Push
+        run: |
+          make \
+            -e DOCKER_USER=${{ secrets.AF_ACCESS_USER }} \
+            -e DOCKER_PASS=${{ secrets.AF_ACCESS_TOKEN }} \
+            -e GITTAG="-${{ steps.bump_version.outputs.new_tag }}" \
+            all
